@@ -64,7 +64,6 @@ void ATaskCharacter::BeginPlay()
 	MoveVec = FVector::Zero();
 }
 
-PRAGMA_DISABLE_OPTIMIZATION
 void ATaskCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
