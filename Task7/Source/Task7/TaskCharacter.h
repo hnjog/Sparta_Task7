@@ -57,6 +57,5 @@ protected:
 	float RotateSpeed;
 
 	FVector MoveVec;
-
 	FRotator RotateR;
 };

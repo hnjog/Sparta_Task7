@@ -131,15 +131,19 @@ void ATaskCharacter::Move(const FInputActionValue& value)
 		return;
 
 	const FVector2D& MoveValue = value.Get<FVector2D>();
+	const float YValue = SpringArmComp->GetRelativeRotation().Yaw;
+	const FRotator YawRot(0.f, YValue, 0.f);
 
 	if (FMath::IsNearlyZero(MoveValue.X) == false)
 	{
-		MoveVec += (GetActorForwardVector() * MoveValue.X);
+		const FVector Forward = FRotationMatrix(YawRot).GetUnitAxis(EAxis::X);
+		MoveVec += (Forward * MoveValue.X);
 	}
 
 	if (FMath::IsNearlyZero(MoveValue.Y) == false)
 	{
-		MoveVec += (GetActorRightVector() * MoveValue.Y);
+		const FVector Right = FRotationMatrix(YawRot).GetUnitAxis(EAxis::Y);
+		MoveVec += (Right * MoveValue.Y);
 	}
 }
 
