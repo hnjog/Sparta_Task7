@@ -8,6 +8,7 @@
 #include "EnhancedInputComponent.h"
 #include "TaskPlayerController.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/SkeletalMeshComponent.h"
 
 // Sets default values
 ATaskCharacter::ATaskCharacter()
@@ -17,10 +18,12 @@ ATaskCharacter::ATaskCharacter()
 	CapsuleComponent = CreateDefaultSubobject<UCapsuleComponent>(TEXT("CapsuleComponent"));
 	CapsuleComponent->SetCapsuleHalfHeight(88.0f);
 	CapsuleComponent->SetCapsuleRadius(34.0f);
+	CapsuleComponent->SetSimulatePhysics(false);
 	SetRootComponent(CapsuleComponent);
 
 	Mesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Mesh"));
 	Mesh->SetupAttachment(CapsuleComponent);
+	Mesh->SetSimulatePhysics(false);
 
 	ConstructorHelpers::FObjectFinder<USkeletalMesh> MeshAsset(TEXT("/Game/Resource/Robot_scout_R_21/Mesh/SK_Robot_scout_R21.SK_Robot_scout_R21"));
 	if (MeshAsset.Succeeded())
@@ -42,13 +45,15 @@ ATaskCharacter::ATaskCharacter()
 	SpringArmComp = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
 	SpringArmComp->SetupAttachment(CapsuleComponent);
 	SpringArmComp->TargetArmLength = 300.0f;
-	SpringArmComp->bUsePawnControlRotation = true;
+	SpringArmComp->bUsePawnControlRotation = false;
 	SpringArmComp->TargetOffset.Set(0.0, 0.0, 150.0);
 
 	CameraComp = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	CameraComp->SetupAttachment(SpringArmComp, USpringArmComponent::SocketName);
-	CameraComp->bUsePawnControlRotation = false;
 	CameraComp->SetRelativeRotation(FRotator(-20.0f, 0.0f, 0.0f));
+
+	MoveSpeed = 600.0f;
+	RotateSpeed = 300.0f;
 }
 
 // Called when the game starts or when spawned
@@ -56,13 +61,36 @@ void ATaskCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	MoveVec = FVector::Zero();
 }
 
-// Called every frame
+PRAGMA_DISABLE_OPTIMIZATION
 void ATaskCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	if (MoveVec.Size() > 0)
+	{
+		FVector TempMoveVec = MoveVec.GetSafeNormal() * MoveSpeed * DeltaTime;
+
+		AddActorLocalOffset(TempMoveVec);
+		MoveVec = FVector::Zero();
+	}
+
+	if (FMath::IsNearlyZero(RotateR.Yaw) == false)
+	{
+		AddActorLocalRotation(FRotator(0.0,RotateR.Yaw * RotateSpeed * DeltaTime,0.0));
+	}
+
+	if (FMath::IsNearlyZero(RotateR.Pitch) == false)
+	{
+		FRotator SpringRot = SpringArmComp->GetRelativeRotation() + FRotator(RotateR.Pitch * RotateSpeed * DeltaTime,0.0 , 0.0);
+		SpringRot.Pitch = FMath::Clamp(SpringRot.Pitch, -40.0, 60.0);
+
+		SpringArmComp->SetRelativeRotation(SpringRot);
+	}
+
+	RotateR = FRotator::ZeroRotator;
 }
 
 // Called to bind functionality to input
@@ -99,9 +127,25 @@ void ATaskCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 
 void ATaskCharacter::Move(const FInputActionValue& value)
 {
+	if (Controller == nullptr)
+		return;
+
+	const FVector2D& MoveValue = value.Get<FVector2D>();
+
+	if (FMath::IsNearlyZero(MoveValue.X) == false)
+	{
+		MoveVec += (GetActorForwardVector() * MoveValue.X);
+	}
+
+	if (FMath::IsNearlyZero(MoveValue.Y) == false)
+	{
+		MoveVec += (GetActorRightVector() * MoveValue.Y);
+	}
 }
 
 void ATaskCharacter::Look(const FInputActionValue& value)
 {
+	const FVector2D& LookValue = value.Get<FVector2D>();
+	RotateR = FRotator(-LookValue.Y, LookValue.X, 0.0);
 }
 
