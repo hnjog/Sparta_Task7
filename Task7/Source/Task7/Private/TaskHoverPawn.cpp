@@ -1,17 +1,17 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "TaskCharacter.h"
+#include "TaskHoverPawn.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Animation/AnimInstance.h"
 #include "EnhancedInputComponent.h"
-#include "TaskPlayerController.h"
+#include "HoverController.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 
 // Sets default values
-ATaskCharacter::ATaskCharacter()
+ATaskHoverPawn::ATaskHoverPawn()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
@@ -25,7 +25,7 @@ ATaskCharacter::ATaskCharacter()
 	Mesh->SetupAttachment(CapsuleComponent);
 	Mesh->SetSimulatePhysics(false);
 
-	ConstructorHelpers::FObjectFinder<USkeletalMesh> MeshAsset(TEXT("/Game/Resource/Robot_scout_R_21/Mesh/SK_Robot_scout_R21.SK_Robot_scout_R21"));
+	ConstructorHelpers::FObjectFinder<USkeletalMesh> MeshAsset(TEXT("/Game/Resource/Drone_Scavenger/SK/SK_Drone_Scavenger.SK_Drone_Scavenger"));
 	if (MeshAsset.Succeeded())
 	{
 		Mesh->SetSkeletalMesh(MeshAsset.Object);
@@ -34,7 +34,7 @@ ATaskCharacter::ATaskCharacter()
 
 		// Anim Class를 찾아 세팅
 		// Class를 찾는것이기에 마지막에 _C 를 붙인다!
-		ConstructorHelpers::FClassFinder<UAnimInstance> MeshAnimAsset(TEXT("/Game/Resource/Robot_scout_R_21/Demo/Animations/ThirdPerson_AnimBP.ThirdPerson_AnimBP_C"));
+		ConstructorHelpers::FClassFinder<UAnimInstance> MeshAnimAsset(TEXT("/Game/Resource/Drone_Scavenger/Animations/ABP_Drone.ABP_Drone_C"));
 		if (MeshAnimAsset.Succeeded())
 		{
 			Mesh->SetAnimationMode(EAnimationMode::AnimationBlueprint);
@@ -57,7 +57,7 @@ ATaskCharacter::ATaskCharacter()
 }
 
 // Called when the game starts or when spawned
-void ATaskCharacter::BeginPlay()
+void ATaskHoverPawn::BeginPlay()
 {
 	Super::BeginPlay();
 	
@@ -65,7 +65,8 @@ void ATaskCharacter::BeginPlay()
 	RotateR = FRotator::ZeroRotator;
 }
 
-void ATaskCharacter::Tick(float DeltaTime)
+// Called every frame
+void ATaskHoverPawn::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
@@ -79,12 +80,12 @@ void ATaskCharacter::Tick(float DeltaTime)
 
 	if (FMath::IsNearlyZero(RotateR.Yaw) == false)
 	{
-		AddActorLocalRotation(FRotator(0.0,RotateR.Yaw * RotateSpeed * DeltaTime,0.0));
+		AddActorLocalRotation(FRotator(0.0, RotateR.Yaw * RotateSpeed * DeltaTime, 0.0));
 	}
 
 	if (FMath::IsNearlyZero(RotateR.Pitch) == false)
 	{
-		FRotator SpringRot = SpringArmComp->GetRelativeRotation() + FRotator(RotateR.Pitch * RotateSpeed * DeltaTime,0.0 , 0.0);
+		FRotator SpringRot = SpringArmComp->GetRelativeRotation() + FRotator(RotateR.Pitch * RotateSpeed * DeltaTime, 0.0, 0.0);
 		SpringRot.Pitch = FMath::Clamp(SpringRot.Pitch, -40.0, 60.0);
 
 		SpringArmComp->SetRelativeRotation(SpringRot);
@@ -94,13 +95,13 @@ void ATaskCharacter::Tick(float DeltaTime)
 }
 
 // Called to bind functionality to input
-void ATaskCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+void ATaskHoverPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 	if (UEnhancedInputComponent* EnhancedInput = Cast<UEnhancedInputComponent>(PlayerInputComponent))
 	{
-		if (ATaskPlayerController* PlayerController = Cast<ATaskPlayerController>(GetController()))
+		if (AHoverController* PlayerController = Cast<AHoverController>(GetController()))
 		{
 			if (UInputAction* MoveAction = PlayerController->GetMoveAction())
 			{
@@ -108,7 +109,7 @@ void ATaskCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 					MoveAction,
 					ETriggerEvent::Triggered,
 					this,
-					&ATaskCharacter::Move
+					&ATaskHoverPawn::Move
 				);
 			}
 
@@ -118,14 +119,14 @@ void ATaskCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 					LookAction,
 					ETriggerEvent::Triggered,
 					this,
-					&ATaskCharacter::Look
+					&ATaskHoverPawn::Look
 				);
 			}
 		}
 	}
 }
 
-void ATaskCharacter::Move(const FInputActionValue& value)
+void ATaskHoverPawn::Move(const FInputActionValue& value)
 {
 	if (Controller == nullptr)
 		return;
@@ -147,9 +148,20 @@ void ATaskCharacter::Move(const FInputActionValue& value)
 	}
 }
 
-void ATaskCharacter::Look(const FInputActionValue& value)
+void ATaskHoverPawn::Look(const FInputActionValue& value)
 {
 	const FVector2D& LookValue = value.Get<FVector2D>();
 	RotateR = FRotator(-LookValue.Y, LookValue.X, 0.0);
 }
 
+void ATaskHoverPawn::UpMove(const FInputActionValue& value)
+{
+}
+
+void ATaskHoverPawn::DownMove(const FInputActionValue& value)
+{
+}
+
+void ATaskHoverPawn::RotateZ(const FInputActionValue& value)
+{
+}
