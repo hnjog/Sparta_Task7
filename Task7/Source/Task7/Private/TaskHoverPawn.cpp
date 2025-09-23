@@ -29,7 +29,7 @@ ATaskHoverPawn::ATaskHoverPawn()
 	if (MeshAsset.Succeeded())
 	{
 		Mesh->SetSkeletalMesh(MeshAsset.Object);
-		Mesh->SetRelativeLocation(FVector(0.0, 0.0, -90.0));
+		Mesh->SetRelativeLocation(FVector(0.0, 0.0, 0.0));
 		Mesh->SetRelativeRotation(FRotator(0.0, -90.0, 0.0));
 
 		// Anim Class를 찾아 세팅
@@ -46,11 +46,11 @@ ATaskHoverPawn::ATaskHoverPawn()
 	SpringArmComp->SetupAttachment(CapsuleComponent);
 	SpringArmComp->TargetArmLength = 300.0f;
 	SpringArmComp->bUsePawnControlRotation = false;
-	SpringArmComp->TargetOffset.Set(0.0, 0.0, 150.0);
+	SpringArmComp->TargetOffset.Set(0.0, 0.0, 0.0);
 
 	CameraComp = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	CameraComp->SetupAttachment(SpringArmComp, USpringArmComponent::SocketName);
-	CameraComp->SetRelativeRotation(FRotator(-20.0f, 0.0f, 0.0f));
+	CameraComp->SetRelativeRotation(FRotator(0.0f, 0.0f, 0.0f));
 
 	MoveSpeed = 600.0f;
 	RotateSpeed = 300.0f;
