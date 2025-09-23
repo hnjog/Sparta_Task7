@@ -78,17 +78,10 @@ void ATaskHoverPawn::Tick(float DeltaTime)
 		MoveVec = FVector::Zero();
 	}
 
-	if (FMath::IsNearlyZero(RotateR.Yaw) == false)
+	// Quat 로 바꿔야할지 고민해볼 것
+	if (RotateR.IsNearlyZero() == false)
 	{
-		AddActorLocalRotation(FRotator(0.0, RotateR.Yaw * RotateSpeed * DeltaTime, 0.0));
-	}
-
-	if (FMath::IsNearlyZero(RotateR.Pitch) == false)
-	{
-		FRotator SpringRot = SpringArmComp->GetRelativeRotation() + FRotator(RotateR.Pitch * RotateSpeed * DeltaTime, 0.0, 0.0);
-		SpringRot.Pitch = FMath::Clamp(SpringRot.Pitch, -40.0, 60.0);
-
-		SpringArmComp->SetRelativeRotation(SpringRot);
+		AddActorLocalRotation(RotateR);
 	}
 
 	RotateR = FRotator::ZeroRotator;
@@ -120,6 +113,36 @@ void ATaskHoverPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 					ETriggerEvent::Triggered,
 					this,
 					&ATaskHoverPawn::Look
+				);
+			}
+
+			if (UInputAction* UpAction = PlayerController->GetUpAction())
+			{
+				EnhancedInput->BindAction(
+					UpAction,
+					ETriggerEvent::Triggered,
+					this,
+					&ATaskHoverPawn::UpMove
+				);
+			}
+
+			if (UInputAction* DownAction = PlayerController->GetDownAction())
+			{
+				EnhancedInput->BindAction(
+					DownAction,
+					ETriggerEvent::Triggered,
+					this,
+					&ATaskHoverPawn::DownMove
+				);
+			}
+
+			if (UInputAction* RotZAction = PlayerController->GetRotateZAction())
+			{
+				EnhancedInput->BindAction(
+					RotZAction,
+					ETriggerEvent::Triggered,
+					this,
+					&ATaskHoverPawn::RotateZ
 				);
 			}
 		}
@@ -156,12 +179,28 @@ void ATaskHoverPawn::Look(const FInputActionValue& value)
 
 void ATaskHoverPawn::UpMove(const FInputActionValue& value)
 {
+	const float& UpValue = value.Get<float>();
+	const FRotator RollRot(0.f, 0.f, UpValue);
+	if (FMath::IsNearlyZero(UpValue) == false)
+	{
+		const FVector Up = FRotationMatrix(RollRot).GetUnitAxis(EAxis::Z);
+		MoveVec += (Up * UpValue);
+	}
 }
 
 void ATaskHoverPawn::DownMove(const FInputActionValue& value)
 {
+	const float& DownValue = value.Get<float>();
+	const FRotator RollRot(0.f, 0.f, DownValue);
+	if (FMath::IsNearlyZero(DownValue) == false)
+	{
+		const FVector Down = FRotationMatrix(RollRot).GetUnitAxis(EAxis::Z);
+		MoveVec -= (Down * DownValue);
+	}
 }
 
 void ATaskHoverPawn::RotateZ(const FInputActionValue& value)
 {
+	const float& RotateValue = value.Get<float>();
+	RotateR.Roll = -RotateValue;
 }
