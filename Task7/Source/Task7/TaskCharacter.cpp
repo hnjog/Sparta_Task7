@@ -54,6 +54,10 @@ ATaskCharacter::ATaskCharacter()
 
 	MoveSpeed = 600.0f;
 	RotateSpeed = 300.0f;
+	JumpSpeed = 600.0f;
+	GravityScale = -980.0f;
+	bJump = false;
+	TraceHeight = 48.0;
 }
 
 // Called when the game starts or when spawned
@@ -63,18 +67,53 @@ void ATaskCharacter::BeginPlay()
 	
 	MoveVec = FVector::Zero();
 	RotateR = FRotator::ZeroRotator;
+	JumpVec = FVector::Zero();
 }
 
+PRAGMA_DISABLE_OPTIMIZATION
 void ATaskCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
 	if (MoveVec.Size() > 0)
 	{
-		FVector TempMoveVec = MoveVec.GetSafeNormal() * MoveSpeed * DeltaTime;
+		double JumpScale = bJump ? 0.3 : 1.0;
+
+		FVector TempMoveVec = MoveVec.GetSafeNormal() * MoveSpeed * DeltaTime * JumpScale;
 
 		AddActorLocalOffset(TempMoveVec);
-		MoveVec = FVector::Zero();
+	}
+
+	if (JumpVec.Size() > 0)
+	{
+		JumpVec.X += MoveVec.X * MoveSpeed * DeltaTime;
+		JumpVec.Y += MoveVec.Y * MoveSpeed * DeltaTime;
+		JumpVec.Z += GravityScale * DeltaTime;
+
+		if (UWorld* World = GetWorld())
+		{
+			FVector Start = GetActorLocation();
+			FVector End = GetActorLocation() + GetActorUpVector() * -TraceHeight;
+
+			FHitResult HitResult;
+
+			FCollisionQueryParams Params;
+			Params.AddIgnoredActor(this);
+
+			bool bLand = World->LineTraceSingleByChannel(
+				HitResult, Start, End, ECollisionChannel::ECC_Visibility, Params);
+
+			if (bLand)
+			{
+				SetActorLocation(Start + GetActorUpVector() * 44.0f);
+				bJump = false;
+				JumpVec = FVector::Zero();
+			}
+		}
+
+		FVector TempJumpVec = JumpVec * DeltaTime;
+
+		AddActorLocalOffset(TempJumpVec);
 	}
 
 	if (FMath::IsNearlyZero(RotateR.Yaw) == false)
@@ -90,8 +129,10 @@ void ATaskCharacter::Tick(float DeltaTime)
 		SpringArmComp->SetRelativeRotation(SpringRot);
 	}
 
+	MoveVec = FVector::Zero();
 	RotateR = FRotator::ZeroRotator;
 }
+PRAGMA_ENABLE_OPTIMIZATION
 
 // Called to bind functionality to input
 void ATaskCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -119,6 +160,16 @@ void ATaskCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 					ETriggerEvent::Triggered,
 					this,
 					&ATaskCharacter::Look
+				);
+			}
+
+			if (UInputAction* JumpAction = PlayerController->GetJumpAction())
+			{
+				EnhancedInput->BindAction(
+					JumpAction,
+					ETriggerEvent::Triggered,
+					this,
+					&ATaskCharacter::Jump
 				);
 			}
 		}
@@ -151,5 +202,15 @@ void ATaskCharacter::Look(const FInputActionValue& value)
 {
 	const FVector2D& LookValue = value.Get<FVector2D>();
 	RotateR = FRotator(-LookValue.Y, LookValue.X, 0.0);
+}
+
+void ATaskCharacter::Jump(const FInputActionValue& value)
+{
+	if (value.Get<bool>() &&
+		bJump == false)
+	{
+		bJump = true;
+		JumpVec = FVector(MoveVec.X * MoveSpeed, MoveVec.Y * MoveSpeed, JumpSpeed);
+	}
 }
 

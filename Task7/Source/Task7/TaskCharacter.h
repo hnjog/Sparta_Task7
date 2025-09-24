@@ -37,6 +37,9 @@ public:
 
 	UFUNCTION()
 	void Look(const FInputActionValue& value);
+
+	UFUNCTION()
+	void Jump(const FInputActionValue& value);
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UCapsuleComponent> CapsuleComponent;
@@ -56,6 +59,19 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
 	float RotateSpeed;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+	float JumpSpeed;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+	float GravityScale;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+	float TraceHeight;
+
 	FVector MoveVec;
 	FRotator RotateR;
+
+	FVector JumpVec;
+	bool bJump;
+	
 };
