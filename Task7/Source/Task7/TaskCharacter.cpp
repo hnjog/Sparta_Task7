@@ -70,7 +70,6 @@ void ATaskCharacter::BeginPlay()
 	JumpVec = FVector::Zero();
 }
 
-PRAGMA_DISABLE_OPTIMIZATION
 void ATaskCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
@@ -132,7 +131,6 @@ void ATaskCharacter::Tick(float DeltaTime)
 	MoveVec = FVector::Zero();
 	RotateR = FRotator::ZeroRotator;
 }
-PRAGMA_ENABLE_OPTIMIZATION
 
 // Called to bind functionality to input
 void ATaskCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
