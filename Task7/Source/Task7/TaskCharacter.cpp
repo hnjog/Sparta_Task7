@@ -16,7 +16,7 @@ ATaskCharacter::ATaskCharacter()
 	PrimaryActorTick.bCanEverTick = true;
 
 	CapsuleComponent = CreateDefaultSubobject<UCapsuleComponent>(TEXT("CapsuleComponent"));
-	CapsuleComponent->SetCapsuleHalfHeight(88.0f);
+	CapsuleComponent->SetCapsuleHalfHeight(86.0f);
 	CapsuleComponent->SetCapsuleRadius(34.0f);
 	CapsuleComponent->SetSimulatePhysics(false);
 	SetRootComponent(CapsuleComponent);
@@ -57,7 +57,7 @@ ATaskCharacter::ATaskCharacter()
 	JumpSpeed = 600.0f;
 	GravityScale = -980.0f;
 	bJump = false;
-	TraceHeight = 48.0;
+	TraceHeight = 55.0;
 }
 
 // Called when the game starts or when spawned
@@ -105,7 +105,7 @@ void ATaskCharacter::Tick(float DeltaTime)
 
 			if (bLand)
 			{
-				SetActorLocation(Start + GetActorUpVector() * 44.0f);
+				SetActorLocation(Start + GetActorUpVector() * CapsuleComponent->GetScaledCapsuleHalfHeight() / 2);
 				bJump = false;
 				JumpVec = FVector::Zero();
 			}
