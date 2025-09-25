@@ -19,6 +19,8 @@ ATaskCharacter::ATaskCharacter()
 	CapsuleComponent->SetCapsuleHalfHeight(86.0f);
 	CapsuleComponent->SetCapsuleRadius(34.0f);
 	CapsuleComponent->SetSimulatePhysics(false);
+	CapsuleComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	CapsuleComponent->SetCollisionProfileName(TEXT("Pawn"));
 	SetRootComponent(CapsuleComponent);
 
 	Mesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Mesh"));
@@ -57,7 +59,7 @@ ATaskCharacter::ATaskCharacter()
 	JumpSpeed = 600.0f;
 	GravityScale = -980.0f;
 	bJump = false;
-	TraceHeight = 55.0;
+	TraceHeight = 70.0;
 }
 
 // Called when the game starts or when spawned
@@ -89,30 +91,15 @@ void ATaskCharacter::Tick(float DeltaTime)
 		JumpVec.Y += MoveVec.Y * MoveSpeed * DeltaTime;
 		JumpVec.Z += GravityScale * DeltaTime;
 
-		if (UWorld* World = GetWorld())
-		{
-			FVector Start = GetActorLocation();
-			FVector End = GetActorLocation() + GetActorUpVector() * -TraceHeight;
-
-			FHitResult HitResult;
-
-			FCollisionQueryParams Params;
-			Params.AddIgnoredActor(this);
-
-			bool bLand = World->LineTraceSingleByChannel(
-				HitResult, Start, End, ECollisionChannel::ECC_Visibility, Params);
-
-			if (bLand)
-			{
-				SetActorLocation(Start + GetActorUpVector() * CapsuleComponent->GetScaledCapsuleHalfHeight() / 2);
-				bJump = false;
-				JumpVec = FVector::Zero();
-			}
-		}
-
 		FVector TempJumpVec = JumpVec * DeltaTime;
+		FHitResult HitResult;
+		AddActorLocalOffset(TempJumpVec, true, &HitResult);
 
-		AddActorLocalOffset(TempJumpVec);
+		if (HitResult.IsValidBlockingHit())
+		{
+			bJump = false;
+			JumpVec = FVector::Zero();
+		}
 	}
 
 	if (FMath::IsNearlyZero(RotateR.Yaw) == false)
